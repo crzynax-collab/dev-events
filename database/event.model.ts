@@ -204,6 +204,11 @@ function normalizeTime(timeString: string): string {
       hours = 0;
     }
 
+    // Validate hours (0-23) and minutes (0-59) after conversion
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      return trimmed; // Return original input if values are out of range
+    }
+
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   }
 

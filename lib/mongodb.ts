@@ -7,7 +7,7 @@ import mongoose, { Connection } from 'mongoose';
  */
 declare global {
   // eslint-disable-next-line no-var
-  var mongoose: {
+  var mongooseCache: {
     conn: Connection | null;
     promise: Promise<Connection> | null;
   } | undefined;
@@ -18,11 +18,11 @@ declare global {
  * Uses a global variable that persists across hot reloads.
  */
 const cached: { conn: Connection | null; promise: Promise<Connection> | null } =
-  global.mongoose ?? { conn: null, promise: null };
+  global.mongooseCache ?? { conn: null, promise: null };
 
 // Store the cached connection in global scope for Next.js hot reload support
-if (!global.mongoose) {
-  global.mongoose = cached;
+if (!global.mongooseCache) {
+  global.mongooseCache = cached;
 }
 
 /**
