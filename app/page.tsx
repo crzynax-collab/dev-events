@@ -1,8 +1,43 @@
 import EventCard from "@/components/EventCard"
 import ExploreBtn from "@/components/ExploreBtn"
-import { events } from "@/lib/constants"
+import { Event } from "@/database"
+import connectDB from "@/lib/mongodb"
 
-const page = () => {
+type EventCardData = {
+  title: string;
+  image: string;
+  slug: string;
+  location: string;
+  date: string;
+  time: string;
+};
+
+const page = async () => {
+  // Load events directly from MongoDB during prerender to avoid external HTTP calls
+  let rawEvents: EventCardData[] = [];
+  try {
+    await connectDB();
+
+    rawEvents = await Event.find()
+      .sort({ createdAt: -1 })
+      .select("title image slug location date time")
+      .lean<EventCardData[]>();
+  } catch (error) {
+    // Server-side logging only - don't leak internals to the client
+    console.error("Error connecting to DB or fetching events:", error);
+    // Fallback to an empty array so the page can still render safely
+    rawEvents = [];
+  }
+
+  const events: EventCardData[] = rawEvents.map((event) => ({
+    title: event.title,
+    image: event.image,
+    slug: event.slug,
+    location: event.location,
+    date: event.date,
+    time: event.time,
+  }));
+
   return (
     <section>
     <h1 className="text-center">The Hub for Every Dev <br /> Event You Can't Miss</h1>
@@ -14,12 +49,12 @@ const page = () => {
      <h3>Featured Events</h3>
     
       <ul className="events">
-        {events.map((event)=>(
-          <li key={event.title}>
-           <EventCard {...event} />
-
-          </li>
-        ))}
+        {events && events.length > 0 &&
+          events.map((event) => (
+            <li key={event.slug}>
+              <EventCard {...event} />
+            </li>
+          ))}
       </ul>
 </div>
     
