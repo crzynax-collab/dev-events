@@ -4,9 +4,6 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import { Event, type IEvent } from "@/database";
 
-// Use Node.js runtime to ensure compatibility with Mongoose
-export const runtime = "nodejs";
-
 /**
  * GET /api/events/[slug]
  *

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+ cacheComponents: true, 
    images:{
     remotePatterns:[
       {
@@ -10,6 +11,9 @@ const nextConfig: NextConfig = {
       }
     ]
    },
+  turbopack: {
+    root: process.cwd(),
+  },
   async rewrites() {
     return [
       {

@@ -18,7 +18,7 @@ const EventCard = ({ title, image, slug, location, date, time }: Props) => {
     typeof image === "string" && image.trim().length > 0 && image.startsWith("http");
 
   return (
-    <Link href={`/Events/${slug}`} id="Event-card">
+    <Link href={`/Events/${slug}`} id="event-card">
       {hasImage && (
         isRemoteStringImage ? (
           // Use a plain <img> for remote URLs to avoid any Next image config issues

@@ -232,7 +232,8 @@ function normalizeTime(timeString: string): string {
     try {
       event.date = normalizeDate(event.date);
     } catch (error) {
-      throw error;
+      // If invalid, keep original
+      console.warn(`Invalid date format for event: ${(error as Error).message}`);
     }
   }
 

@@ -2,17 +2,12 @@ import connectDB from "@/lib/mongodb";
 import { NextResponse } from "next/server";
 import { Event } from "@/database";
 import { v2 as cloudinary } from "cloudinary";
+import { Tags } from "lucide-react";
   
 // Configure Cloudinary using environment variables (must be provided in production)
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Cloudinary automatically reads from CLOUDINARY_URL env var
 
 const MAX_IMAGE_BYTES = Number(process.env.MAX_IMAGE_BYTES) || 5 * 1024 * 1024; // default 5MB
-
-export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +15,9 @@ export async function POST(req: Request) {
 
     const contentType = req.headers.get("content-type") || "";
     let eventData: Record<string, any> = {};
+
+    let tags: string[] = [];
+    let agenda: string[] = [];
 
     /* ==================================================
        HANDLE FORM-DATA (Postman + File Upload)
@@ -47,6 +45,36 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
+
+      /* ---------- TAGS AND AGENDA ---------- */
+      const rawTags = formData.get("tags") as string;
+      const rawAgenda = formData.get("agenda") as string;
+
+      // Try to parse as JSON array, otherwise split by comma
+      try {
+        const parsedTags = JSON.parse(rawTags);
+        if (Array.isArray(parsedTags)) {
+          tags = parsedTags.map((t: any) => String(t).trim()).filter(Boolean);
+        } else {
+          tags = rawTags.split(",").map(t => t.trim()).filter(Boolean);
+        }
+      } catch {
+        tags = rawTags.split(",").map(t => t.trim()).filter(Boolean);
+      }
+
+      try {
+        const parsedAgenda = JSON.parse(rawAgenda);
+        if (Array.isArray(parsedAgenda)) {
+          agenda = parsedAgenda.map((a: any) => String(a).trim()).filter(Boolean);
+        } else {
+          agenda = rawAgenda.split(",").map(a => a.trim()).filter(Boolean);
+        }
+      } catch {
+        agenda = rawAgenda.split(",").map(a => a.trim()).filter(Boolean);
+      }
+
+      eventData.tags = tags;
+      eventData.agenda = agenda;
 
       /* ---------- MODE (EXPLICIT & SAFE) ---------- */
       const rawMode = formData.get("mode");
@@ -147,19 +175,27 @@ export async function POST(req: Request) {
     /* ==================================================
        PARSE ARRAYS
     ================================================== */
-    if (typeof eventData.agenda === "string") {
-      eventData.agenda = eventData.agenda
-        .split(",")
-        .map((i: string) => i.trim())
-        .filter(Boolean);
-    }
+    // Helper function to parse array fields
+    const parseArrayField = (field: any): string[] => {
+      if (Array.isArray(field)) {
+        return field.map((item: any) => String(item).trim()).filter(Boolean);
+      }
+      if (typeof field === "string") {
+        try {
+          const parsed = JSON.parse(field);
+          if (Array.isArray(parsed)) {
+            return parsed.map((item: any) => String(item).trim()).filter(Boolean);
+          }
+        } catch {
+          // Not JSON, split by comma
+        }
+        return field.split(",").map((item: string) => item.trim()).filter(Boolean);
+      }
+      return [];
+    };
 
-    if (typeof eventData.tags === "string") {
-      eventData.tags = eventData.tags
-        .split(",")
-        .map((t: string) => t.trim())
-        .filter(Boolean);
-    }
+    eventData.agenda = parseArrayField(eventData.agenda);
+    eventData.tags = parseArrayField(eventData.tags);
 
     /* ==================================================
        REQUIRED FIELD CHECK (MODE EXCLUDED)

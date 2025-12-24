@@ -4,8 +4,10 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Tags } from "lucide-react";
-
+import {  GetSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import Bookevent from "@/components/bookevent";
+import { IEvent } from "@/database/event.model";
+import EventCard from "@/components/EventCard";
 
 
 // ============================
@@ -83,6 +85,9 @@ const EventDetailsPage = async ({
 }) => {
   // Extract slug (Next.js 16 async params)
   const { slug } = await params;
+
+  // Fetch similar events
+  const similarEvents: IEvent[] = await GetSimilarEventsBySlug(slug);
 
   // Fetch event data
   const request = await fetch(`${BASE_URL}/api/events/${slug}`);
@@ -219,6 +224,18 @@ const EventDetailsPage = async ({
         </div>
       </aside>
     </div>
+
+    
+
+     <div className="flex w-full flex-col gap-4 pt-20">
+     <h2>Similar Events</h2>
+     <div className="events">
+     {similarEvents.length > 0 && similarEvents.map((event: IEvent) =>(
+      <EventCard key={event.title.toString()} title={event.title} image={event.image} slug={event.slug} location={event.location} date={event.date} time={event.time} />
+     ))}
+     </div>
+     </div>
+
   </section>
 );
 

@@ -2,9 +2,11 @@ import EventCard from "@/components/EventCard"
 import ExploreBtn from "@/components/ExploreBtn"
 import { Event } from "@/database"
 import connectDB from "@/lib/mongodb"
+import { cacheLife } from "next/cache";
+import { cache } from "react";
 
 type EventCardData = {
-  title: string;
+  title: string; 
   image: string;
   slug: string;
   location: string;
@@ -13,7 +15,8 @@ type EventCardData = {
 };
 
 const page = async () => {
-  // Load events directly from MongoDB during prerender to avoid external HTTP calls
+ 'use cache';
+ cacheLife('hours')
   let rawEvents: EventCardData[] = [];
   try {
     await connectDB();
@@ -51,7 +54,7 @@ const page = async () => {
       <ul className="events">
         {events && events.length > 0 &&
           events.map((event) => (
-            <li key={event.slug}>
+            <li key={event.slug} className="list-none">
               <EventCard {...event} />
             </li>
           ))}
