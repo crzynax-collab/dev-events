@@ -8,6 +8,7 @@ import {  GetSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import Bookevent from "@/components/bookevent";
 import { IEvent } from "@/database/event.model";
 import EventCard from "@/components/EventCard";
+import { cacheLife } from "next/cache";
 
 
 // ============================
@@ -83,6 +84,8 @@ const EventDetailsPage = async ({
 }: {
   params: Promise<{ slug: string }>;
 }) => {
+  'use cache';
+  cacheLife('hours')
   // Extract slug (Next.js 16 async params)
   const { slug } = await params;
 
@@ -220,7 +223,7 @@ const EventDetailsPage = async ({
             </p>
           )}
 
-          <Bookevent />
+          <Bookevent eventId={event._id} slug={event.slug} />
         </div>
       </aside>
     </div>

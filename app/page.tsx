@@ -1,12 +1,12 @@
-import EventCard from "@/components/EventCard"
-import ExploreBtn from "@/components/ExploreBtn"
-import { Event } from "@/database"
-import connectDB from "@/lib/mongodb"
+import EventCard from "@/components/EventCard";
+import ExploreBtn from "@/components/ExploreBtn";
+import { Event } from "@/database";
+import connectDB from "@/lib/mongodb";
 import { cacheLife } from "next/cache";
-import { cache } from "react";
+import SearchEvents from "@/components/SearchEvents";
 
 type EventCardData = {
-  title: string; 
+  title: string;
   image: string;
   slug: string;
   location: string;
@@ -15,54 +15,61 @@ type EventCardData = {
 };
 
 const page = async () => {
- 'use cache';
- cacheLife('hours')
-  let rawEvents: EventCardData[] = [];
+  "use cache";
+  cacheLife("hours");
+
+  let events: EventCardData[] = [];
+
   try {
     await connectDB();
 
-    rawEvents = await Event.find()
+    const rawEvents = await Event.find()
       .sort({ createdAt: -1 })
-      .select("title image slug location date time")
-      .lean<EventCardData[]>();
-  } catch (error) {
-    // Server-side logging only - don't leak internals to the client
-    console.error("Error connecting to DB or fetching events:", error);
-    // Fallback to an empty array so the page can still render safely
-    rawEvents = [];
-  }
+      .select("title image slug location date time") // don't select _id
+      .lean();
 
-  const events: EventCardData[] = rawEvents.map((event) => ({
-    title: event.title,
-    image: event.image,
-    slug: event.slug,
-    location: event.location,
-    date: event.date,
-    time: event.time,
-  }));
+    // ✅ convert to plain JSON-safe objects
+    events = rawEvents.map((e: any) => ({
+      title: e.title,
+      image: e.image,
+      slug: e.slug,
+      location: e.location,
+      date: e.date,
+      time: e.time,
+    }));
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    events = [];
+  }
 
   return (
     <section>
-    <h1 className="text-center">The Hub for Every Dev <br /> Event You Can't Miss</h1>
-    <p className="text-center mt-5">Hackthons, Meetups, and Conferences, All in One Place </p>
+      <h1 className="text-center">
+        The Hub for Every Dev <br /> Event You Can't Miss
+      </h1>
 
-<ExploreBtn />
+      <p className="text-center mt-5">
+        Hackathons, Meetups, and Conferences, All in One Place
+      </p>
 
-<div className="mt-20 space-y-7">
-     <h3>Featured Events</h3>
-    
-      <ul className="events">
-        {events && events.length > 0 &&
-          events.map((event) => (
+      <ExploreBtn />
+
+      {/* 🔍 search with suggestions */}
+      <SearchEvents events={events} />
+
+      <div className="mt-20 space-y-7">
+        <h3>Featured Events</h3>
+
+        <ul className="events">
+          {events.map((event) => (
             <li key={event.slug} className="list-none">
               <EventCard {...event} />
             </li>
           ))}
-      </ul>
-</div>
-    
+        </ul>
+      </div>
     </section>
-  )
-}
+  );
+};
 
-export default page
+export default page;
